@@ -4,6 +4,7 @@ import { FileUploader } from './components/FileUploader';
 import { PromptEditor } from './components/PromptEditor';
 import { ResultsTable } from './components/ResultsTable';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { StyleDemo } from './components/StyleDemo';
 import { processWithGemini } from './services/geminiService';
 import './App.css';
 
@@ -95,6 +96,11 @@ function App() {
             <Settings className="h-4 w-4" />
             <span>API设置</span>
           </button>
+        </div>
+
+        {/* 临时样式测试 */}
+        <div className="mb-6">
+          <StyleDemo />
         </div>
 
         {/* Main Content */}

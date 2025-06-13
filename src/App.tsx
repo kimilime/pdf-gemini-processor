@@ -62,12 +62,28 @@ function App() {
   const handleExportResults = () => {
     if (results.length === 0) return;
 
+    // 生成CSV内容
     const csvContent = [
       Object.keys(results[0]).join(','),
-      ...results.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+      ...results.map(row => Object.values(row).map(val => {
+        // 处理包含逗号、双引号或换行的值
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }).join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // 添加BOM头以确保中文在Excel中正确显示
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvContent;
+
+    // 创建Blob，指定正确的编码
+    const blob = new Blob([csvWithBOM], { 
+      type: 'text/csv;charset=utf-8;' 
+    });
+    
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -76,6 +92,9 @@ function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // 清理URL对象
+    URL.revokeObjectURL(url);
   };
 
   return (

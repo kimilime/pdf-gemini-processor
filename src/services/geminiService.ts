@@ -87,6 +87,31 @@ const parseTextTable = (text: string): TableData[] => {
   return data;
 };
 
+// 延迟函数
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// 带重试的API调用
+const retryAPICall = async (fn: () => Promise<any>, maxRetries = 3, baseDelay = 1000): Promise<any> => {
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      if (i === maxRetries) {
+        throw error;
+      }
+      
+      // 如果是配额限制错误，等待更长时间
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        const retryDelay = error.message?.includes('43s') ? 45000 : baseDelay * Math.pow(2, i);
+        console.log(`API配额限制，等待 ${retryDelay/1000} 秒后重试...`);
+        await delay(retryDelay);
+      } else {
+        await delay(baseDelay * Math.pow(2, i));
+      }
+    }
+  }
+};
+
 // 主要的处理函数
 export const processWithGemini = async (
   file: File,
@@ -94,9 +119,17 @@ export const processWithGemini = async (
   apiKey: string
 ): Promise<TableData[]> => {
   try {
-    // 初始化Gemini API
+    // 初始化Gemini API - 使用最新的2.0模型
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-exp',  // 使用Gemini 2.0 Flash实验版（目前最新最强）
+      generationConfig: {
+        temperature: 0.1,  // 降低温度以获得更一致的结果
+        topP: 0.8,
+        topK: 40,
+        maxOutputTokens: 8192,  // 增加输出Token限制
+      }
+    });
 
     // 将PDF文件转换为Base64
     const base64Data = await fileToBase64(file);
@@ -110,6 +143,7 @@ ${prompt}
 2. 如果是表格数据，请包含所有相关的列
 3. 数字类型的数据请保持为数字格式
 4. 如果没有找到相关数据，请返回空数组 []
+5. 每次都是全新的分析，不受之前对话影响
 
 示例返回格式：
 [
@@ -128,16 +162,18 @@ ${prompt}
 ]
 `;
 
-    // 发送请求到Gemini API
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: 'application/pdf',
-          data: base64Data,
+    // 使用重试机制发送请求到Gemini API
+    const result = await retryAPICall(async () => {
+      return await model.generateContent([
+        {
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: base64Data,
+          },
         },
-      },
-      fullPrompt,
-    ]);
+        fullPrompt,
+      ]);
+    });
 
     const response = await result.response;
     const text = response.text();
@@ -161,8 +197,8 @@ ${prompt}
       if (error.message.includes('API_KEY_INVALID')) {
         throw new Error('API密钥无效，请检查您的Gemini API密钥');
       }
-      if (error.message.includes('QUOTA_EXCEEDED')) {
-        throw new Error('API配额已用完，请检查您的账户余额');
+      if (error.message.includes('429') || error.message.includes('quota')) {
+        throw new Error('API请求配额已用完，请稍后重试或升级您的API计划。详情：https://ai.google.dev/gemini-api/docs/rate-limits');
       }
       if (error.message.includes('MODEL_NOT_FOUND')) {
         throw new Error('模型不可用，请稍后重试');

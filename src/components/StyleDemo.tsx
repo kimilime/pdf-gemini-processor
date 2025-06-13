@@ -2,7 +2,7 @@
 export const StyleDemo = () => {
   return (
     <div className="p-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-3">年报分析提取工具</h3>
+      <h3 className="text-xl font-bold mb-3">功能介绍</h3>
       <div className="space-y-2 text-sm opacity-90">
         <p>🎯 <strong>功能：</strong>使用Google Gemini 2.5 Pro API,根据自定义指令智能批量提取年报数据，自动解析PDF并生成结构化表格</p>
         <p>👨‍💻 <strong>开发：</strong>By Terence Wang</p>

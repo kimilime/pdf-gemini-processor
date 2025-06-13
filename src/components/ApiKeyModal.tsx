@@ -1,24 +1,31 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Key, Eye, EyeOff } from 'lucide-react';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (apiKey: string) => void;
-  currentKey: string;
+  apiKey: string;
 }
 
 export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  currentKey,
+  apiKey: currentKey,
 }) => {
   const [apiKey, setApiKey] = useState(currentKey);
   const [showKey, setShowKey] = useState(false);
 
+  // 当 currentKey 变化时同步 apiKey 状态
+  useEffect(() => {
+    setApiKey(currentKey);
+  }, [currentKey]);
+
   const handleSave = () => {
     if (apiKey.trim()) {
+      // 保存到localStorage
+      localStorage.setItem('gemini-api-key', apiKey.trim());
       onSave(apiKey.trim());
       onClose();
     }

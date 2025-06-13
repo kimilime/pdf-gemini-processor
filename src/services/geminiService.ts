@@ -132,36 +132,38 @@ export const processWithGemini = async (
     });
 
     // 将PDF文件转换为Base64
+    console.log('开始转换PDF文件，文件大小:', file.size, '字节');
     const base64Data = await fileToBase64(file);
+    console.log('PDF转换完成，Base64长度:', base64Data.length);
 
     // 构建完整的提示词
     const fullPrompt = `
-${prompt}
+重要：这是一个PDF文档分析任务！请直接分析提供的PDF文件内容，不要询问或要求提供文件。
 
-请仔细分析上传的PDF文件，提取其中的相关数据。请确保：
-1. 返回有效的JSON格式数据
-2. 如果是表格数据，请包含所有相关的列
-3. 数字类型的数据请保持为数字格式
-4. 如果没有找到相关数据，请返回空数组 []
-5. 每次都是全新的分析，不受之前对话影响
+用户要求：${prompt}
 
-示例返回格式：
+请严格按照以下要求处理：
+1. 直接分析已上传的PDF文件内容
+2. 提取相关数据并返回有效的JSON格式
+3. 不要进行对话，只返回分析结果
+4. 如果是表格数据，请包含所有相关的列
+5. 数字类型的数据请保持为数字格式
+6. 如果没有找到相关数据，请返回空数组 []
+
+必须返回JSON格式，示例：
 [
   {
     "姓名": "张三",
-    "职位": "CEO",
+    "职位": "CEO", 
     "基本薪酬": 1000000,
     "奖金": 500000
-  },
-  {
-    "姓名": "李四", 
-    "职位": "CFO",
-    "基本薪酬": 800000,
-    "奖金": 300000
   }
 ]
+
+请立即开始分析PDF文件并返回JSON数据：
 `;
 
+    console.log('发送请求到Gemini API...');
     // 使用重试机制发送请求到Gemini API
     const result = await retryAPICall(async () => {
       return await model.generateContent([
@@ -177,6 +179,8 @@ ${prompt}
 
     const response = await result.response;
     const text = response.text();
+    console.log('API响应长度:', text.length);
+    console.log('API响应前500字符:', text.substring(0, 500));
 
     if (!text) {
       throw new Error('API返回空响应');

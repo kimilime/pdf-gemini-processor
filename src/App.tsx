@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Upload, Send, Download, FileText, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Settings, Play, Pause, RotateCcw } from 'lucide-react';
 import { FileUploader } from './components/FileUploader';
 import { PromptEditor } from './components/PromptEditor';
 import { ResultsTable } from './components/ResultsTable';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { ProcessingStatus } from './components/ProcessingStatus';
 import { StyleDemo } from './components/StyleDemo';
 import { processWithGemini } from './services/geminiService';
 import './App.css';
@@ -12,26 +13,151 @@ interface TableData {
   [key: string]: string | number;
 }
 
+type FileStatus = 'pending' | 'processing' | 'completed' | 'error';
+
+interface ProcessingState {
+  isProcessing: boolean;
+  currentIndex: number;
+  fileStatuses: { [fileName: string]: FileStatus };
+  errorMessages: { [fileName: string]: string };
+}
+
 function App() {
   const [apiKey, setApiKey] = useState<string>('');
   const [showApiModal, setShowApiModal] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [prompt, setPrompt] = useState<string>('请提取PDF文件中高管薪酬相关的表格数据，包括姓名、职位、基本薪酬、奖金、股权激励等信息。请以JSON格式返回结构化数据。');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [prompt, setPrompt] = useState<string>(`请从港股企业年报PDF文件中提取董事薪酬相关信息，并按以下规范返回结构化JSON数据：
+
+【提取要求】
+1. 目标数据源：董事薪酬披露章节
+2. 提取对象：所有董事及高级管理人员
+3. 数据完整性：确保所有相关人员信息均被提取
+
+【必需字段】
+- 公司名：年报所属企业名称
+- 股票代码：港股代码（如适用）
+- 姓名：董事/高管全名
+- 职务：具体职位描述
+- 入职日：履职开始日期（格式：YYYY-MM-DD，如无信息填写"不适用"）
+- 离职日：职务终止日期（格式：YYYY-MM-DD，如无信息填写"不适用"）
+- 币种：薪酬计量货币单位（港币/人民币等，不含"万元"字样）
+- 固薪：固定薪酬总额，包含董事袍金（单位：万）
+- 奖金：变动薪酬，包含现金性酌定奖金（单位：万）
+- 长期激励：股权性薪酬，包含股票期权、限制性股票等（单位：万）
+- 合计：薪酬总计（单位：万）
+
+【输出格式】
+严格按照JSON数组格式返回，示例：
+[
+  {
+    "公司名": "腾讯控股有限公司",
+    "股票代码": "00700",
+    "姓名": "马化腾",
+    "职务": "董事会主席兼首席执行官",
+    "入职日": "不适用",
+    "离职日": "不适用",
+    "币种": "港币",
+    "固薪": 365.4,
+    "奖金": 0,
+    "长期激励": 0,
+    "合计": 365.4
+  }
+]
+
+【注意事项】
+- 货币单位统一为万元
+- 数值字段请使用数字类型，非文本
+- 如某项薪酬为零或无披露，填写数字0
+- 确保JSON格式正确，可直接解析`);
+  
+  const [processingState, setProcessingState] = useState<ProcessingState>({
+    isProcessing: false,
+    currentIndex: 0,
+    fileStatuses: {},
+    errorMessages: {}
+  });
+  
   const [results, setResults] = useState<TableData[]>([]);
   const [error, setError] = useState<string>('');
 
-  const handleFileUpload = (file: File) => {
-    setUploadedFile(file);
+  // 从localStorage加载API密钥
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('gemini-api-key');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    }
+  }, []);
+
+  const handleFileUpload = (files: File[]) => {
+    setUploadedFiles(files);
     setError('');
+    
+    // 初始化文件状态
+    const newFileStatuses: { [fileName: string]: FileStatus } = {};
+    files.forEach(file => {
+      newFileStatuses[file.name] = 'pending';
+    });
+    
+    setProcessingState(prev => ({
+      ...prev,
+      fileStatuses: newFileStatuses,
+      errorMessages: {}
+    }));
   };
 
   const handlePromptChange = (newPrompt: string) => {
     setPrompt(newPrompt);
   };
 
-  const handleProcess = async () => {
-    if (!uploadedFile) {
+  // 处理单个文件
+  const processSingleFile = async (file: File, index: number) => {
+    setProcessingState(prev => ({
+      ...prev,
+      fileStatuses: {
+        ...prev.fileStatuses,
+        [file.name]: 'processing'
+      }
+    }));
+
+    try {
+      const result = await processWithGemini(file, prompt, apiKey);
+      
+      // 添加文件来源信息到每条记录
+      const resultWithSource = result.map(item => ({
+        ...item,
+        '文件来源': file.name
+      }));
+      
+      setResults(prev => [...prev, ...resultWithSource]);
+      
+      setProcessingState(prev => ({
+        ...prev,
+        fileStatuses: {
+          ...prev.fileStatuses,
+          [file.name]: 'completed'
+        }
+      }));
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '处理失败';
+      
+      setProcessingState(prev => ({
+        ...prev,
+        fileStatuses: {
+          ...prev.fileStatuses,
+          [file.name]: 'error'
+        },
+        errorMessages: {
+          ...prev.errorMessages,
+          [file.name]: errorMessage
+        }
+      }));
+    }
+  };
+
+  // 批量处理文件
+  const handleBatchProcess = async () => {
+    if (uploadedFiles.length === 0) {
       setError('请先上传PDF文件');
       return;
     }
@@ -46,17 +172,56 @@ function App() {
       return;
     }
 
-    setIsProcessing(true);
+    setProcessingState(prev => ({
+      ...prev,
+      isProcessing: true,
+      currentIndex: 0
+    }));
+    
     setError('');
+    setResults([]); // 清空之前的结果
 
-    try {
-      const result = await processWithGemini(uploadedFile, prompt, apiKey);
-      setResults(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '处理失败，请检查API密钥和网络连接');
-    } finally {
-      setIsProcessing(false);
+    // 逐个处理文件
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      if (!processingState.isProcessing) break; // 如果用户暂停了处理
+      
+      setProcessingState(prev => ({
+        ...prev,
+        currentIndex: i
+      }));
+      
+      await processSingleFile(uploadedFiles[i], i);
+      
+      // 在文件之间添加短暂延迟，避免API限制
+      if (i < uploadedFiles.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
+
+    setProcessingState(prev => ({
+      ...prev,
+      isProcessing: false
+    }));
+  };
+
+  // 暂停处理
+  const handlePauseProcess = () => {
+    setProcessingState(prev => ({
+      ...prev,
+      isProcessing: false
+    }));
+  };
+
+  // 重置处理状态
+  const handleResetProcess = () => {
+    setProcessingState({
+      isProcessing: false,
+      currentIndex: 0,
+      fileStatuses: {},
+      errorMessages: {}
+    });
+    setResults([]);
+    setError('');
   };
 
   const handleExportResults = () => {
@@ -87,7 +252,7 @@ function App() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `高管薪酬数据_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `批量处理结果_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -96,6 +261,18 @@ function App() {
     // 清理URL对象
     URL.revokeObjectURL(url);
   };
+
+  // 计算处理统计
+  const getProcessingStats = () => {
+    const total = uploadedFiles.length;
+    const completed = Object.values(processingState.fileStatuses).filter(status => status === 'completed').length;
+    const errors = Object.values(processingState.fileStatuses).filter(status => status === 'error').length;
+    const processing = Object.values(processingState.fileStatuses).filter(status => status === 'processing').length;
+    
+    return { total, completed, errors, processing };
+  };
+
+  const stats = getProcessingStats();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -127,10 +304,14 @@ function App() {
           {/* Upload Section */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Upload className="h-5 w-5 mr-2" />
-              文件上传
+              <FileText className="h-5 w-5 mr-2" />
+              批量文件上传
             </h2>
-            <FileUploader onFileUpload={handleFileUpload} currentFile={uploadedFile} />
+            <FileUploader 
+              onFileUpload={handleFileUpload} 
+              currentFiles={uploadedFiles}
+              fileStatuses={processingState.fileStatuses}
+            />
           </div>
 
           {/* Prompt Section */}
@@ -142,41 +323,37 @@ function App() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-center space-x-4 mb-8">
-          <button
-            onClick={handleProcess}
-            disabled={isProcessing || !uploadedFile}
-            className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
-          >
-            <Send className="h-4 w-4" />
-            <span>{isProcessing ? '处理中...' : '开始处理'}</span>
-          </button>
-
-          {results.length > 0 && (
-            <button
-              onClick={handleExportResults}
-              className="flex items-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <Download className="h-4 w-4" />
-              <span>导出结果</span>
-            </button>
-          )}
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
-            {error}
-          </div>
+        {/* Processing Status */}
+        {uploadedFiles.length > 0 && (
+          <ProcessingStatus
+            totalFiles={stats.total}
+            completedFiles={stats.completed}
+            errorFiles={stats.errors}
+            processingFiles={stats.processing}
+            isProcessing={processingState.isProcessing}
+            onStart={handleBatchProcess}
+            onPause={handlePauseProcess}
+            onReset={handleResetProcess}
+            canStart={uploadedFiles.length > 0 && !!apiKey && !!prompt.trim()}
+            errorMessages={processingState.errorMessages}
+            error={error}
+          />
         )}
 
         {/* Results Section */}
         {results.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              处理结果
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                处理结果 ({results.length} 条记录)
+              </h2>
+              <button
+                onClick={handleExportResults}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              >
+                导出CSV
+              </button>
+            </div>
             <ResultsTable data={results} />
           </div>
         )}
@@ -185,8 +362,8 @@ function App() {
         <ApiKeyModal
           isOpen={showApiModal}
           onClose={() => setShowApiModal(false)}
+          apiKey={apiKey}
           onSave={setApiKey}
-          currentKey={apiKey}
         />
       </div>
     </div>

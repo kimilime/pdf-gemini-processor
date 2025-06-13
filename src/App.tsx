@@ -356,7 +356,7 @@ function App() {
           <div className="flex items-center space-x-3">
             <FileText className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              PDF智能处理器
+              年报提取分析工具
             </h1>
           </div>
           <button
@@ -368,7 +368,7 @@ function App() {
           </button>
         </div>
 
-        {/* 临时样式测试 */}
+        {/* 工具信息 */}
         <div className="mb-6">
           <StyleDemo />
         </div>

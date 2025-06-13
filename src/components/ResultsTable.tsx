@@ -32,10 +32,11 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
       accessorKey: key,
       header: ({ column }) => (
         <button
-          className="flex items-center space-x-1 font-medium text-left hover:text-blue-600 dark:hover:text-blue-400"
+          className="flex items-center space-x-1 font-medium text-left hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          style={{ writingMode: 'horizontal-tb' }}
         >
-          <span>{key}</span>
+          <span className="whitespace-nowrap">{key}</span>
           {column.getIsSorted() === 'asc' ? (
             <ChevronUp className="h-4 w-4" />
           ) : column.getIsSorted() === 'desc' ? (
@@ -103,7 +104,8 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
                 {headerGroup.headers.map(header => (
                   <th
                     key={header.id}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap min-w-0"
+                    style={{ writingMode: 'horizontal-tb' }}
                   >
                     {header.isPlaceholder
                       ? null
@@ -119,7 +121,8 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
                 {row.getVisibleCells().map(cell => (
                   <td
                     key={cell.id}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white"
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-left"
+                    style={{ writingMode: 'horizontal-tb' }}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>

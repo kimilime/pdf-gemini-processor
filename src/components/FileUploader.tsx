@@ -160,7 +160,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFileUpload, curren
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
                     {getStatusIcon(status)}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate text-left">
                         {file.name}
                       </p>
                       <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">

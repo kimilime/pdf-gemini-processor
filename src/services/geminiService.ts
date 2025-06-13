@@ -40,7 +40,7 @@ const parseGeminiResponse = (response: string): TableData[] => {
     return parseTextTable(response);
   } catch (error) {
     console.error('解析响应失败:', error);
-    throw new Error('无法解析返回的数据格式，请检查Prompt是否要求返回JSON格式');
+    throw new Error(`无法解析返回的数据格式。原始返回内容：\n\n${response}`);
   }
 };
 

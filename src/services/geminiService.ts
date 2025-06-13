@@ -19,74 +19,106 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// 解析Gemini返回的JSON数据
+// 解析Gemini响应
 const parseGeminiResponse = (response: string): TableData[] => {
+  console.log('开始解析响应，内容长度:', response.length);
+  
   try {
-    // 尝试提取JSON部分
-    let jsonMatch = response.match(/\[[\s\S]*\]/) || response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      let jsonStr = jsonMatch[0];
-      
-      // 清理常见的JSON格式问题
-      jsonStr = jsonStr
-        // 修复数字中的逗号问题 (如 149,0 -> 149.0)
-        .replace(/(\d+),(\d+)/g, '$1.$2')
-        // 修复多余的逗号 (如 ,"固薪": 149,0, -> "固薪": 149.0)
-        .replace(/,(\s*[,}])/g, '$1')
-        // 移除 ```json 和 ``` 标记
-        .replace(/```json/g, '')
-        .replace(/```/g, '');
-      
-      console.log('清理后的JSON字符串前500字符:', jsonStr.substring(0, 500));
-      
-      const parsed = JSON.parse(jsonStr);
-      
-      // 如果是单个对象，转换为数组
-      if (!Array.isArray(parsed)) {
-        return [parsed];
-      }
-      
+    // 首先尝试直接解析完整的JSON数组
+    const parsed = JSON.parse(response);
+    
+    if (Array.isArray(parsed)) {
+      console.log('直接解析成功，返回', parsed.length, '条记录');
       return parsed;
     }
     
-    // 如果没有找到JSON，尝试解析文本格式的表格
-    return parseTextTable(response);
-  } catch (error) {
-    console.error('解析响应失败:', error);
-    console.error('原始响应:', response);
-    
-    // 尝试更积极的修复
-    try {
-      let jsonMatch = response.match(/\[[\s\S]*\]/) || response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        let jsonStr = jsonMatch[0];
-        
-        // 更积极的清理
-        jsonStr = jsonStr
-          .replace(/```json/g, '')
-          .replace(/```/g, '')
-          .replace(/(\d+),(\d+)/g, '$1.$2')  // 149,0 -> 149.0
-          .replace(/,(\s*[,}\]])/g, '$1')     // 移除多余的逗号
-          .replace(/,(\s*,)/g, ',')           // 移除重复的逗号
-          .replace(/([^\\])"/g, '$1"')        // 确保引号正确
-          .trim();
-        
-        console.log('第二次尝试清理后的JSON:', jsonStr.substring(0, 500));
-        
-        const parsed = JSON.parse(jsonStr);
-        
-        if (!Array.isArray(parsed)) {
-          return [parsed];
-        }
-        
-        return parsed;
-      }
-    } catch (secondError) {
-      console.error('第二次解析也失败:', secondError);
+    if (typeof parsed === 'object' && parsed !== null) {
+      console.log('解析为单个对象，转换为数组');
+      return [parsed];
     }
-    
-    throw new Error(`无法解析返回的数据格式。原始返回内容：\n\n${response}`);
+  } catch (firstError) {
+    console.log('直接解析失败，尝试提取JSON块:', firstError);
   }
+
+  try {
+    // 尝试提取JSON块（支持多种格式）
+    const patterns = [
+      /```json\s*([\s\S]*?)\s*```/g,
+      /```\s*([\s\S]*?)\s*```/g,
+      /\[[\s\S]*\]/g,
+      /\{[\s\S]*\}/g
+    ];
+
+    for (const pattern of patterns) {
+      const matches = [...response.matchAll(pattern)];
+      
+      for (const match of matches) {
+        try {
+          let jsonStr = match[1] || match[0];
+          
+          // 更全面的JSON清理
+          jsonStr = jsonStr
+            .replace(/```json/g, '')
+            .replace(/```/g, '')
+            .replace(/\/\/.*$/gm, '')  // 移除单行注释
+            .replace(/\/\*[\s\S]*?\*\//g, '')  // 移除多行注释
+            .replace(/(\d+),(\d+)/g, '$1.$2')  // 149,0 -> 149.0
+            .replace(/,(\s*[,}\]])/g, '$1')     // 移除多余的逗号
+            .replace(/,(\s*,)/g, ',')           // 移除重复的逗号
+            .replace(/([^\\])"/g, '$1"')        // 确保引号正确
+            .replace(/:\s*,/g, ': null,')       // 空值处理
+            .replace(/,\s*}/g, '}')             // 移除对象末尾的逗号
+            .replace(/,\s*]/g, ']')             // 移除数组末尾的逗号
+            .trim();
+
+          console.log('尝试解析清理后的JSON，长度:', jsonStr.length);
+          
+          const parsed = JSON.parse(jsonStr);
+          
+          if (Array.isArray(parsed)) {
+            console.log('成功解析JSON数组，包含', parsed.length, '条记录');
+            return parsed;
+          }
+          
+          if (typeof parsed === 'object' && parsed !== null) {
+            console.log('成功解析JSON对象，转换为数组');
+            return [parsed];
+          }
+        } catch (parseError) {
+          console.log('JSON解析失败，尝试下一个模式:', parseError);
+          continue;
+        }
+      }
+    }
+  } catch (secondError) {
+    console.error('所有JSON解析尝试都失败:', secondError);
+  }
+
+  // 如果JSON解析失败，尝试表格格式解析
+  console.log('JSON解析完全失败，尝试表格格式解析');
+  try {
+    const tableData = parseTextTable(response);
+    if (tableData.length > 0) {
+      console.log('表格解析成功，返回', tableData.length, '条记录');
+      return tableData;
+    }
+  } catch (tableError) {
+    console.error('表格解析也失败:', tableError);
+  }
+
+  // 最后尝试从响应中提取关键数据（适用于自由文本格式）
+  console.log('尝试从自由文本中提取数据');
+  try {
+    const extractedData = extractDataFromText(response);
+    if (extractedData.length > 0) {
+      console.log('文本提取成功，返回', extractedData.length, '条记录');
+      return extractedData;
+    }
+  } catch (extractError) {
+    console.error('文本提取失败:', extractError);
+  }
+  
+  throw new Error(`无法解析返回的数据格式。原始返回内容的前1000字符：\n\n${response.substring(0, 1000)}`);
 };
 
 // 解析文本格式的表格数据
@@ -132,6 +164,53 @@ const parseTextTable = (text: string): TableData[] => {
   return data;
 };
 
+// 从自由文本中提取数据
+const extractDataFromText = (text: string): TableData[] => {
+  const data: TableData[] = [];
+  const lines = text.split('\n').filter(line => line.trim());
+  
+  // 寻找包含姓名和薪酬信息的行
+  for (const line of lines) {
+    const cleanLine = line.trim();
+    
+    // 匹配可能的薪酬数据模式
+    const patterns = [
+      // 匹配 "姓名: 张三, 固薪: 100万元" 格式
+      /(\S+)[：:]\s*([^,，]+)[,，]\s*(\S+)[：:]\s*([^,，]+)/g,
+      // 匹配 "张三 - 固薪100万元" 格式
+      /(\S+)\s*[-—]\s*(\S+)(\d+(?:\.\d+)?)[万千]?元?/g,
+      // 匹配简单的 "张三 100万" 格式
+      /(\S+)\s+(\d+(?:\.\d+)?)[万千]?元?/g
+    ];
+
+    for (const pattern of patterns) {
+      const matches = [...cleanLine.matchAll(pattern)];
+      
+      for (const match of matches) {
+        try {
+          const row: TableData = {};
+          
+          if (pattern.source.includes('：') || pattern.source.includes(':')) {
+            // 键值对格式
+            row[match[1]] = match[2];
+            row[match[3]] = parseFloat(match[4]) || match[4];
+          } else {
+            // 简单格式
+            row['姓名'] = match[1];
+            row['薪酬'] = parseFloat(match[2]) || match[2];
+          }
+          
+          data.push(row);
+        } catch (error) {
+          console.log('提取数据行失败:', error);
+        }
+      }
+    }
+  }
+  
+  return data;
+};
+
 // 延迟函数
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -164,16 +243,25 @@ export const processWithGemini = async (
   apiKey: string
 ): Promise<TableData[]> => {
   try {
-    // 初始化Gemini API - 使用最新的2.0模型
+    // 初始化Gemini API - 使用正确的2.5 Pro模型
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',  // 使用Gemini 2.0 Flash实验版（目前最新最强）
+      model: 'gemini-2.5-pro-preview-06-05',  // 使用正确的2.5 Pro模型名称
       generationConfig: {
-        temperature: 0.1,  // 降低温度以获得更一致的结果
-        topP: 0.8,
-        topK: 40,
-        maxOutputTokens: 8192,  // 增加输出Token限制
-      }
+        temperature: 0.0,  // 尝试更低的温度获得更一致的结果
+        topP: 1.0,        // 尝试网页版可能使用的参数
+        topK: 32,         // 调整为可能更接近网页版的值
+        maxOutputTokens: 65536,  // 2.5 Pro的最大输出限制
+        candidateCount: 1,
+      },
+      systemInstruction: `你是一个专业的财务数据分析师，专门从年报PDF中提取结构化的薪酬数据。
+
+重要的数字单位转换规则：
+- 如果看到"千元"或"千"，数值除以10得到万元（例如：240千 = 24万）
+- 如果看到"元"，数值除以10000得到万元（例如：2400000元 = 240万）  
+- 如果看到"万元"或"万"，保持数值不变
+
+请严格按照用户提供的格式要求进行数据提取和转换。确保理解并正确处理所有货币单位。`
     });
 
     // 将PDF文件转换为Base64
@@ -181,34 +269,22 @@ export const processWithGemini = async (
     const base64Data = await fileToBase64(file);
     console.log('PDF转换完成，Base64长度:', base64Data.length);
 
-    // 构建完整的提示词
-    const fullPrompt = `
-重要：这是一个PDF文档分析任务！请直接分析提供的PDF文件内容，不要询问或要求提供文件。
+    // 直接使用用户的prompt，不添加额外的包装
+    const fullPrompt = prompt;
 
-用户要求：${prompt}
-
-请严格按照以下要求处理：
-1. 直接分析已上传的PDF文件内容
-2. 提取相关数据并返回有效的JSON格式
-3. 不要进行对话，只返回分析结果
-4. 如果是表格数据，请包含所有相关的列
-5. 数字类型的数据请保持为数字格式
-6. 如果没有找到相关数据，请返回空数组 []
-
-必须返回JSON格式，示例：
-[
-  {
-    "姓名": "张三",
-    "职位": "CEO", 
-    "基本薪酬": 1000000,
-    "奖金": 500000
-  }
-]
-
-请立即开始分析PDF文件并返回JSON数据：
-`;
-
-    console.log('发送请求到Gemini API...');
+    console.log('发送请求到Gemini API，使用模型:', 'gemini-2.5-pro-preview-06-05');
+    console.log('Prompt长度:', fullPrompt.length);
+    console.log('API Key前10位:', apiKey.substring(0, 10) + '...');
+    console.log('生成配置:', {
+      temperature: 0.0,
+      topP: 1.0,
+      topK: 32,
+      maxOutputTokens: 65536,
+      candidateCount: 1
+    });
+    console.log('系统指令:', "你是一个专业的财务数据分析师...");
+    console.log('完整Prompt前500字符:', fullPrompt.substring(0, 500));
+    
     // 使用重试机制发送请求到Gemini API
     const result = await retryAPICall(async () => {
       return await model.generateContent([
@@ -218,7 +294,9 @@ export const processWithGemini = async (
             data: base64Data,
           },
         },
-        fullPrompt,
+        {
+          text: fullPrompt
+        }
       ]);
     });
 

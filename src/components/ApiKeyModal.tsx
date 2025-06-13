@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Key, Eye, EyeOff } from 'lucide-react';
 
 interface ApiKeyModalProps {

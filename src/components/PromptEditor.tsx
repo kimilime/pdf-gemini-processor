@@ -1,4 +1,4 @@
-import React from 'react';
+// No React import needed with new JSX Transform
 import { MessageSquare } from 'lucide-react';
 
 interface PromptEditorProps {

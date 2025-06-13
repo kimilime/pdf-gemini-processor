@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Upload, Send, Download, FileText, Settings } from 'lucide-react';
 import { FileUploader } from './components/FileUploader';
 import { PromptEditor } from './components/PromptEditor';

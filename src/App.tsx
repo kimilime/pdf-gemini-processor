@@ -111,6 +111,8 @@ function App() {
 
   // 处理单个文件
   const processSingleFile = async (file: File) => {
+    console.log('开始处理文件:', file.name);
+    
     setProcessingState(prev => ({
       ...prev,
       fileStatuses: {
@@ -120,7 +122,9 @@ function App() {
     }));
 
     try {
+      console.log('调用 processWithGemini 处理文件:', file.name);
       const result = await processWithGemini(file, prompt, apiKey);
+      console.log('文件处理成功，结果条数:', result.length);
       
       // 添加文件来源信息到每条记录
       const resultWithSource = result.map(item => ({
@@ -128,7 +132,11 @@ function App() {
         '文件来源': file.name
       }));
       
-      setResults(prev => [...prev, ...resultWithSource]);
+      setResults(prev => {
+        const newResults = [...prev, ...resultWithSource];
+        console.log('更新结果，总条数:', newResults.length);
+        return newResults;
+      });
       
       setProcessingState(prev => ({
         ...prev,
@@ -138,7 +146,10 @@ function App() {
         }
       }));
       
+      console.log('文件处理完成:', file.name);
+      
     } catch (err) {
+      console.error('文件处理失败:', file.name, err);
       const errorMessage = err instanceof Error ? err.message : '处理失败';
       
       setProcessingState(prev => ({
@@ -157,6 +168,8 @@ function App() {
 
   // 批量处理文件
   const handleBatchProcess = async () => {
+    console.log('开始批量处理，文件数量:', uploadedFiles.length);
+    
     if (uploadedFiles.length === 0) {
       setError('请先上传PDF文件');
       return;
@@ -172,6 +185,7 @@ function App() {
       return;
     }
 
+    console.log('设置处理状态为true');
     setProcessingState(prev => ({
       ...prev,
       isProcessing: true,
@@ -181,23 +195,31 @@ function App() {
     setError('');
     setResults([]); // 清空之前的结果
 
-    // 逐个处理文件
-    for (let i = 0; i < uploadedFiles.length; i++) {
-      if (!processingState.isProcessing) break; // 如果用户暂停了处理
-      
-      setProcessingState(prev => ({
-        ...prev,
-        currentIndex: i
-      }));
-      
-      await processSingleFile(uploadedFiles[i]);
-      
-      // 在文件之间添加短暂延迟，避免API限制
-      if (i < uploadedFiles.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // 逐个处理文件
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        console.log(`开始处理第 ${i + 1} 个文件:`, uploadedFiles[i].name);
+        
+        setProcessingState(prev => ({
+          ...prev,
+          currentIndex: i
+        }));
+        
+        await processSingleFile(uploadedFiles[i]);
+        
+        // 在文件之间添加短暂延迟，避免API限制
+        if (i < uploadedFiles.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
+      
+      console.log('所有文件处理完成');
+    } catch (error) {
+      console.error('批量处理过程中出现错误:', error);
+      setError('批量处理过程中出现错误，请查看具体文件的错误信息');
     }
 
+    console.log('设置处理状态为false');
     setProcessingState(prev => ({
       ...prev,
       isProcessing: false

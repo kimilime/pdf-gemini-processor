@@ -30,6 +30,28 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
 }) => {
   const progressPercentage = totalFiles > 0 ? Math.round((completedFiles + errorFiles) / totalFiles * 100) : 0;
 
+  console.log('ProcessingStatus 渲染:', {
+    totalFiles,
+    canStart,
+    isProcessing,
+    onStart: typeof onStart
+  });
+
+  const handleStart = () => {
+    console.log('ProcessingStatus: 开始按钮被点击');
+    onStart();
+  };
+
+  const handlePause = () => {
+    console.log('ProcessingStatus: 暂停按钮被点击');
+    onPause();
+  };
+
+  const handleReset = () => {
+    console.log('ProcessingStatus: 重置按钮被点击');
+    onReset();
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -97,7 +119,7 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
       <div className="flex items-center space-x-4 mb-4">
         {!isProcessing ? (
           <button
-            onClick={onStart}
+            onClick={handleStart}
             disabled={!canStart}
             className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
           >
@@ -106,7 +128,7 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
           </button>
         ) : (
           <button
-            onClick={onPause}
+            onClick={handlePause}
             className="flex items-center space-x-2 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors"
           >
             <Pause className="h-4 w-4" />
@@ -115,7 +137,7 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
         )}
 
         <button
-          onClick={onReset}
+          onClick={handleReset}
           disabled={isProcessing}
           className="flex items-center space-x-2 px-4 py-3 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
         >

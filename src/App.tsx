@@ -228,6 +228,7 @@ function App() {
 
   // 暂停处理
   const handlePauseProcess = () => {
+    console.log('App: handlePauseProcess 被调用');
     setProcessingState(prev => ({
       ...prev,
       isProcessing: false
@@ -236,6 +237,7 @@ function App() {
 
   // 重置处理状态
   const handleResetProcess = () => {
+    console.log('App: handleResetProcess 被调用');
     setProcessingState({
       isProcessing: false,
       currentIndex: 0,
@@ -244,6 +246,12 @@ function App() {
     });
     setResults([]);
     setError('');
+  };
+
+  // 测试函数
+  const testFunction = () => {
+    console.log('测试函数被调用');
+    alert('测试函数正常工作');
   };
 
   const handleExportResults = () => {
@@ -347,19 +355,31 @@ function App() {
 
         {/* Processing Status */}
         {uploadedFiles.length > 0 && (
-          <ProcessingStatus
-            totalFiles={stats.total}
-            completedFiles={stats.completed}
-            errorFiles={stats.errors}
-            processingFiles={stats.processing}
-            isProcessing={processingState.isProcessing}
-            onStart={handleBatchProcess}
-            onPause={handlePauseProcess}
-            onReset={handleResetProcess}
-            canStart={uploadedFiles.length > 0 && !!apiKey && !!prompt.trim()}
-            errorMessages={processingState.errorMessages}
-            error={error}
-          />
+          <div>
+            {/* 添加测试按钮 */}
+            <div className="mb-4">
+              <button 
+                onClick={testFunction}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+              >
+                测试按钮
+              </button>
+            </div>
+            
+            <ProcessingStatus
+              totalFiles={stats.total}
+              completedFiles={stats.completed}
+              errorFiles={stats.errors}
+              processingFiles={stats.processing}
+              isProcessing={processingState.isProcessing}
+              onStart={handleBatchProcess}
+              onPause={handlePauseProcess}
+              onReset={handleResetProcess}
+              canStart={uploadedFiles.length > 0 && !!apiKey && !!prompt.trim()}
+              errorMessages={processingState.errorMessages}
+              error={error}
+            />
+          </div>
         )}
 
         {/* Results Section */}

@@ -23,9 +23,22 @@ const fileToBase64 = (file: File): Promise<string> => {
 const parseGeminiResponse = (response: string): TableData[] => {
   try {
     // 尝试提取JSON部分
-    const jsonMatch = response.match(/\[[\s\S]*\]/) || response.match(/\{[\s\S]*\}/);
+    let jsonMatch = response.match(/\[[\s\S]*\]/) || response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const jsonStr = jsonMatch[0];
+      let jsonStr = jsonMatch[0];
+      
+      // 清理常见的JSON格式问题
+      jsonStr = jsonStr
+        // 修复数字中的逗号问题 (如 149,0 -> 149.0)
+        .replace(/(\d+),(\d+)/g, '$1.$2')
+        // 修复多余的逗号 (如 ,"固薪": 149,0, -> "固薪": 149.0)
+        .replace(/,(\s*[,}])/g, '$1')
+        // 移除 ```json 和 ``` 标记
+        .replace(/```json/g, '')
+        .replace(/```/g, '');
+      
+      console.log('清理后的JSON字符串前500字符:', jsonStr.substring(0, 500));
+      
       const parsed = JSON.parse(jsonStr);
       
       // 如果是单个对象，转换为数组
@@ -40,6 +53,38 @@ const parseGeminiResponse = (response: string): TableData[] => {
     return parseTextTable(response);
   } catch (error) {
     console.error('解析响应失败:', error);
+    console.error('原始响应:', response);
+    
+    // 尝试更积极的修复
+    try {
+      let jsonMatch = response.match(/\[[\s\S]*\]/) || response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        let jsonStr = jsonMatch[0];
+        
+        // 更积极的清理
+        jsonStr = jsonStr
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .replace(/(\d+),(\d+)/g, '$1.$2')  // 149,0 -> 149.0
+          .replace(/,(\s*[,}\]])/g, '$1')     // 移除多余的逗号
+          .replace(/,(\s*,)/g, ',')           // 移除重复的逗号
+          .replace(/([^\\])"/g, '$1"')        // 确保引号正确
+          .trim();
+        
+        console.log('第二次尝试清理后的JSON:', jsonStr.substring(0, 500));
+        
+        const parsed = JSON.parse(jsonStr);
+        
+        if (!Array.isArray(parsed)) {
+          return [parsed];
+        }
+        
+        return parsed;
+      }
+    } catch (secondError) {
+      console.error('第二次解析也失败:', secondError);
+    }
+    
     throw new Error(`无法解析返回的数据格式。原始返回内容：\n\n${response}`);
   }
 };

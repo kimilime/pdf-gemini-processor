@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, Settings, Play, Pause, RotateCcw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileText, Settings } from 'lucide-react';
 import { FileUploader } from './components/FileUploader';
 import { PromptEditor } from './components/PromptEditor';
 import { ResultsTable } from './components/ResultsTable';
@@ -110,7 +110,7 @@ function App() {
   };
 
   // 处理单个文件
-  const processSingleFile = async (file: File, index: number) => {
+  const processSingleFile = async (file: File) => {
     setProcessingState(prev => ({
       ...prev,
       fileStatuses: {
@@ -190,7 +190,7 @@ function App() {
         currentIndex: i
       }));
       
-      await processSingleFile(uploadedFiles[i], i);
+      await processSingleFile(uploadedFiles[i]);
       
       // 在文件之间添加短暂延迟，避免API限制
       if (i < uploadedFiles.length - 1) {

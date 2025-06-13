@@ -368,7 +368,7 @@ function App() {
           </button>
         </div>
 
-        {/* 工具信息 */}
+        {/* 应用介绍 */}
         <div className="mb-6">
           <StyleDemo />
         </div>

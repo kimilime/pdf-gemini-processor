@@ -9,7 +9,7 @@ interface PromptEditorProps {
 export const PromptEditor: React.FC<PromptEditorProps> = ({ prompt, onChange }) => {
   const presetPrompts = [
     {
-      name: '高管薪酬提取',
+      name: '港股高管薪酬提取',
       prompt: `请从港股企业年报PDF文件中提取董事薪酬相关信息，并按以下规范返回结构化JSON数据：
 
 【提取原则】
@@ -105,12 +105,8 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ prompt, onChange }) 
 5. JSON格式是否正确？`
     },
     {
-      name: '财务数据提取',
-      prompt: '请提取PDF文件中的主要财务数据，包括营收、利润、资产负债等核心财务指标。请以JSON格式返回结构化数据。'
-    },
-    {
-      name: '股东信息提取',
-      prompt: '请提取PDF文件中的股东信息，包括股东名称、持股比例、股权变动等信息。请以JSON格式返回结构化数据。'
+      name: '新建',
+      prompt: ''
     }
   ];
 

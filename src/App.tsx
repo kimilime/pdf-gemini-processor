@@ -30,7 +30,7 @@ function App() {
   const [modelConfig, setModelConfig] = useState<ModelConfig>({
     provider: 'gemini',
     apiKey: '',
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-pro',
     apiUrl: 'https://generativelanguage.googleapis.com'
   });
   const [showModelModal, setShowModelModal] = useState(false);
@@ -408,12 +408,12 @@ function App() {
           >
               <Brain className="h-4 w-4" />
               <span>
-                {modelConfig.provider === 'gemini' ? 'Gemini 2.5 Pro' : 
-                 modelConfig.provider === 'openai' ? 'GPT-4o' :
-                 modelConfig.provider === 'claude' ? 'Claude Sonnet 4' :
-                 modelConfig.provider === 'qwen' ? '通义千问' :
-                 modelConfig.provider === 'deepseek' ? 'DeepSeek R1' :
-                 modelConfig.provider === 'doubao' ? '豆包 1.5 Pro' : 'AI模型'}
+                {modelConfig.provider === 'gemini' ? `Gemini ${modelConfig.model?.replace('gemini-', '').replace('-pro', ' Pro').replace('-flash', ' Flash') || '2.5 Pro'}` : 
+                 modelConfig.provider === 'openai' ? `OpenAI ${modelConfig.model?.replace('gpt-', 'GPT-').toUpperCase() || 'GPT-4O'}` :
+                 modelConfig.provider === 'claude' ? `Claude ${modelConfig.model?.replace('claude-', '').replace('-sonnet', ' Sonnet').replace('-20241022', '') || 'Sonnet'}` :
+                 modelConfig.provider === 'qwen' ? `通义千问 ${modelConfig.model?.replace('qwen-', '').replace('plus', 'Plus').replace('max', 'Max') || 'Plus'}` :
+                 modelConfig.provider === 'deepseek' ? `DeepSeek ${modelConfig.model?.replace('deepseek-', '').replace('v3', 'V3').replace('chat', 'Chat').replace('reasoner', 'Reasoner') || 'V3'}` :
+                 modelConfig.provider === 'doubao' ? `豆包 ${modelConfig.model?.replace('doubao-', '').replace('-pro', ' Pro').replace('-32k', ' 32K') || '1.5 Pro'}` : 'AI模型'}
               </span>
               <span className="text-xs opacity-70">▼</span>
           </button>

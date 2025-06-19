@@ -153,9 +153,9 @@ function App() {
       }
     } else {
       // 兼容旧版本，加载Gemini API密钥
-      const savedApiKey = localStorage.getItem('gemini-api-key');
-      if (savedApiKey) {
-        setApiKey(savedApiKey);
+    const savedApiKey = localStorage.getItem('gemini-api-key');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
         setModelConfig(prev => ({ ...prev, apiKey: savedApiKey }));
       }
     }
@@ -401,11 +401,11 @@ function App() {
             </h1>
           </div>
           <div className="flex items-center space-x-4">
-            <button
+          <button
               onClick={() => setShowModelModal(true)}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg transition-colors font-medium"
               title="AI 模型配置"
-            >
+          >
               <Brain className="h-4 w-4" />
               <span>
                 {modelConfig.provider === 'gemini' ? 'Gemini 2.5 Pro' : 
@@ -416,7 +416,7 @@ function App() {
                  modelConfig.provider === 'doubao' ? '豆包 1.5 Pro' : 'AI模型'}
               </span>
               <span className="text-xs opacity-70">▼</span>
-            </button>
+          </button>
           </div>
         </div>
 

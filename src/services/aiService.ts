@@ -10,31 +10,31 @@ export interface TableData {
   [key: string]: string | number;
 }
 
-// 默认配置
+// 默认配置 - 根据最新文档更新
 export const DEFAULT_CONFIGS: Record<string, Partial<ModelConfig>> = {
   gemini: {
     provider: 'gemini',
-    model: 'gemini-2.5-pro',
+    model: 'gemini-2.5-pro', // 保持最新最强且支持文件上传的模型
     apiUrl: 'https://generativelanguage.googleapis.com'
   },
   openai: {
     provider: 'openai',
-    model: 'gpt-4o',
+    model: 'gpt-4o', // 支持视觉和文件处理的最新模型
     apiUrl: 'https://api.openai.com/v1'
   },
   claude: {
     provider: 'claude',
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-3-5-sonnet-20241022', // 最新支持PDF的模型
     apiUrl: 'https://api.anthropic.com'
   },
   qwen: {
     provider: 'qwen',
-    model: 'qwen-max-2025-01-25',
-    apiUrl: 'https://dashscope.aliyuncs.com'
+    model: 'qwen-plus', // 根据阿里云文档，推荐使用qwen-plus
+    apiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1' // 使用OpenAI兼容模式
   },
   deepseek: {
     provider: 'deepseek',
-    model: 'deepseek-reasoner',
+    model: 'deepseek-v3', // 最新最强的模型，支持视觉和推理
     apiUrl: 'https://api.deepseek.com'
   },
   doubao: {
@@ -80,13 +80,13 @@ const retryAPICall = async (fn: () => Promise<any>, maxRetries = 3, baseDelay = 
   }
 };
 
-// Gemini API 调用
+// Gemini API 调用 - 使用最新最强的2.5 Pro模型
 const callGeminiAPI = async (config: ModelConfig, prompt: string, base64Data: string): Promise<string> => {
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
   
   const genAI = new GoogleGenerativeAI(config.apiKey);
   const model = genAI.getGenerativeModel({ 
-    model: config.model || 'gemini-2.0-flash-exp',
+    model: config.model || 'gemini-2.5-pro', // 使用最新最强且支持文件上传的模型
     generationConfig: {
       temperature: 0.1,
       topK: 32,
@@ -146,14 +146,15 @@ const callOpenAIAPI = async (config: ModelConfig, prompt: string, base64Data: st
   return data.choices[0].message.content;
 };
 
-// Claude API 调用
+// Claude API 调用 - 支持PDF处理
 const callClaudeAPI = async (config: ModelConfig, prompt: string, base64Data: string): Promise<string> => {
   const response = await fetch(`${config.apiUrl}/v1/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': config.apiKey,
-      'anthropic-version': '2023-06-01'
+      'anthropic-version': '2023-06-01',
+      'anthropic-beta': 'pdfs-2024-09-25' // 启用PDF支持
     },
     body: JSON.stringify({
       model: config.model || 'claude-3-5-sonnet-20241022',
@@ -165,7 +166,7 @@ const callClaudeAPI = async (config: ModelConfig, prompt: string, base64Data: st
           content: [
             { type: 'text', text: prompt },
             {
-              type: 'image',
+              type: 'document',
               source: {
                 type: 'base64',
                 media_type: 'application/pdf',
@@ -186,34 +187,32 @@ const callClaudeAPI = async (config: ModelConfig, prompt: string, base64Data: st
   return data.content[0].text;
 };
 
-// 通义千问 API 调用
+// 通义千问 API 调用 - 使用OpenAI兼容格式
 const callQwenAPI = async (config: ModelConfig, prompt: string, base64Data: string): Promise<string> => {
-  const response = await fetch(`${config.apiUrl}/api/v1/services/aigc/text-generation/generation`, {
+  // 根据阿里云官方文档：https://help.aliyun.com/zh/model-studio/use-qwen-by-calling-api
+  // 使用OpenAI兼容的API格式
+  const response = await fetch(`${config.apiUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${config.apiKey}`
     },
     body: JSON.stringify({
-      model: config.model || 'qwen-max',
-      input: {
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              {
-                type: 'image_url',
-                image_url: { url: `data:application/pdf;base64,${base64Data}` }
-              }
-            ]
-          }
-        ]
-      },
-      parameters: {
-        temperature: 0.1,
-        max_tokens: 8192
-      }
+      model: config.model || 'qwen-plus',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url', 
+              image_url: { url: `data:application/pdf;base64,${base64Data}` }
+            }
+          ]
+        }
+      ],
+      max_tokens: 8192,
+      temperature: 0.1
     })
   });
 
@@ -222,10 +221,10 @@ const callQwenAPI = async (config: ModelConfig, prompt: string, base64Data: stri
   }
 
   const data = await response.json();
-  return data.output.text;
+  return data.choices[0].message.content;
 };
 
-// DeepSeek API 调用
+// DeepSeek API 调用 - OpenAI兼容格式
 const callDeepSeekAPI = async (config: ModelConfig, prompt: string, base64Data: string): Promise<string> => {
   const response = await fetch(`${config.apiUrl}/chat/completions`, {
     method: 'POST',
@@ -234,7 +233,7 @@ const callDeepSeekAPI = async (config: ModelConfig, prompt: string, base64Data: 
       'Authorization': `Bearer ${config.apiKey}`
     },
     body: JSON.stringify({
-      model: config.model || 'deepseek-chat',
+      model: config.model || 'deepseek-v3',
       messages: [
         {
           role: 'user',

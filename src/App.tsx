@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Settings, Brain } from 'lucide-react';
+import { FileText, Brain } from 'lucide-react';
 import { FileUploader } from './components/FileUploader';
 import { PromptEditor } from './components/PromptEditor';
 import { ResultsTable } from './components/ResultsTable';
@@ -249,11 +249,7 @@ function App() {
     }
 
     if (!modelConfig.apiKey.trim()) {
-      if (modelConfig.provider === 'gemini') {
-        setShowApiModal(true);
-      } else {
-        setShowModelModal(true);
-      }
+      setShowModelModal(true);
       return;
     }
 
@@ -405,31 +401,22 @@ function App() {
             </h1>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setShowModelModal(true)}
-                className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg transition-colors"
-                title="AI 模型配置"
-              >
-                <Brain className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                  {modelConfig.provider === 'gemini' ? 'Gemini' : 
-                   modelConfig.provider === 'openai' ? 'GPT' :
-                   modelConfig.provider === 'claude' ? 'Claude' :
-                   modelConfig.provider === 'qwen' ? '通义千问' :
-                   modelConfig.provider === 'deepseek' ? 'DeepSeek' :
-                   modelConfig.provider === 'doubao' ? '豆包' : '模型'}
-                </span>
-              </button>
-              <button
-                onClick={() => setShowApiModal(true)}
-                className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-                title="API 设置"
-              >
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">设置</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setShowModelModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg transition-colors font-medium"
+              title="AI 模型配置"
+            >
+              <Brain className="h-4 w-4" />
+              <span>
+                {modelConfig.provider === 'gemini' ? 'Gemini 2.5 Pro' : 
+                 modelConfig.provider === 'openai' ? 'GPT-4o' :
+                 modelConfig.provider === 'claude' ? 'Claude Sonnet 4' :
+                 modelConfig.provider === 'qwen' ? '通义千问' :
+                 modelConfig.provider === 'deepseek' ? 'DeepSeek R1' :
+                 modelConfig.provider === 'doubao' ? '豆包 1.5 Pro' : 'AI模型'}
+              </span>
+              <span className="text-xs opacity-70">▼</span>
+            </button>
           </div>
         </div>
 

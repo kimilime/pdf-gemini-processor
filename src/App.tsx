@@ -7,7 +7,7 @@ import { ApiKeyModal } from './components/ApiKeyModal';
 import { ModelConfigModal } from './components/ModelConfigModal';
 import { ProcessingStatus } from './components/ProcessingStatus';
 import { StyleDemo } from './components/StyleDemo';
-import { processWithAI, processWithGemini, DEFAULT_CONFIGS } from './services/aiService';
+import { processWithAI } from './services/aiService';
 import type { ModelConfig } from './services/aiService';
 import './App.css';
 

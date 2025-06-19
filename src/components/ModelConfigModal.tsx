@@ -31,9 +31,9 @@ const MODEL_DESCRIPTIONS = {
 const DEFAULT_MODELS = {
   gemini: 'gemini-2.5-pro',
   openai: 'gpt-4o',
-  claude: 'claude-3-5-sonnet-20241022',
-  qwen: 'qwen-plus',
-  deepseek: 'deepseek-v3',
+  claude: 'claude-sonnet-4-20250514',
+  qwen: 'qwen-max-2025-01-25',
+  deepseek: 'deepseek-reasoner',
   doubao: 'doubao-1.5-pro-32k'
 };
 

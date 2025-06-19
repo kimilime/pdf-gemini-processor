@@ -1,21 +1,12 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { FileText, Brain } from 'lucide-react';
-=======
 import { FileText, Settings } from 'lucide-react';
->>>>>>> parent of 1ecb083 (更新多模型支持)
 import { FileUploader } from './components/FileUploader';
 import { PromptEditor } from './components/PromptEditor';
 import { ResultsTable } from './components/ResultsTable';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { ProcessingStatus } from './components/ProcessingStatus';
 import { StyleDemo } from './components/StyleDemo';
-<<<<<<< HEAD
-import { processWithAI } from './services/aiService';
-import type { ModelConfig } from './services/aiService';
-=======
 import { processWithGemini } from './services/geminiService';
->>>>>>> parent of 1ecb083 (更新多模型支持)
 import './App.css';
 
 interface TableData {
@@ -141,29 +132,9 @@ function App() {
 
   // 从localStorage加载API密钥
   useEffect(() => {
-<<<<<<< HEAD
-    // 优先加载新的模型配置
-    const savedModelConfig = localStorage.getItem('ai-model-config');
-    if (savedModelConfig) {
-      try {
-        const config = JSON.parse(savedModelConfig);
-        setModelConfig(config);
-        setApiKey(config.apiKey);
-      } catch (error) {
-        console.error('解析模型配置失败:', error);
-      }
-    } else {
-      // 兼容旧版本，加载Gemini API密钥
     const savedApiKey = localStorage.getItem('gemini-api-key');
     if (savedApiKey) {
       setApiKey(savedApiKey);
-        setModelConfig(prev => ({ ...prev, apiKey: savedApiKey }));
-      }
-=======
-    const savedApiKey = localStorage.getItem('gemini-api-key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
->>>>>>> parent of 1ecb083 (更新多模型支持)
     }
   }, []);
 
@@ -254,13 +225,8 @@ function App() {
       return;
     }
 
-<<<<<<< HEAD
-    if (!modelConfig.apiKey.trim()) {
-      setShowModelModal(true);
-=======
     if (!apiKey) {
       setShowApiModal(true);
->>>>>>> parent of 1ecb083 (更新多模型支持)
       return;
     }
 
@@ -393,26 +359,6 @@ function App() {
               年报提取分析工具
             </h1>
           </div>
-<<<<<<< HEAD
-          <div className="flex items-center space-x-4">
-          <button
-              onClick={() => setShowModelModal(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg transition-colors font-medium"
-              title="AI 模型配置"
-          >
-              <Brain className="h-4 w-4" />
-              <span>
-                {modelConfig.provider === 'gemini' ? 'Gemini 2.5 Pro' : 
-                 modelConfig.provider === 'openai' ? 'GPT-4o' :
-                 modelConfig.provider === 'claude' ? 'Claude Sonnet 4' :
-                 modelConfig.provider === 'qwen' ? '通义千问' :
-                 modelConfig.provider === 'deepseek' ? 'DeepSeek R1' :
-                 modelConfig.provider === 'doubao' ? '豆包 1.5 Pro' : 'AI模型'}
-              </span>
-              <span className="text-xs opacity-70">▼</span>
-          </button>
-          </div>
-=======
           <button
             onClick={() => setShowApiModal(true)}
             className="flex items-center space-x-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -420,7 +366,6 @@ function App() {
             <Settings className="h-4 w-4" />
             <span>API设置</span>
           </button>
->>>>>>> parent of 1ecb083 (更新多模型支持)
         </div>
 
         {/* 应用介绍 */}

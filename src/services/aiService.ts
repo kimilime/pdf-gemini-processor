@@ -14,7 +14,7 @@ export interface TableData {
 export const DEFAULT_CONFIGS: Record<string, Partial<ModelConfig>> = {
   gemini: {
     provider: 'gemini',
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-pro',
     apiUrl: 'https://generativelanguage.googleapis.com'
   },
   openai: {
@@ -24,22 +24,22 @@ export const DEFAULT_CONFIGS: Record<string, Partial<ModelConfig>> = {
   },
   claude: {
     provider: 'claude',
-    model: 'claude-3-5-sonnet-20241022',
+    model: 'claude-sonnet-4-20250514',
     apiUrl: 'https://api.anthropic.com'
   },
   qwen: {
     provider: 'qwen',
-    model: 'qwen-max',
+    model: 'qwen-max-2025-01-25',
     apiUrl: 'https://dashscope.aliyuncs.com'
   },
   deepseek: {
     provider: 'deepseek',
-    model: 'deepseek-chat',
+    model: 'deepseek-reasoner',
     apiUrl: 'https://api.deepseek.com'
   },
   doubao: {
     provider: 'doubao',
-    model: 'doubao-pro-32k',
+    model: 'doubao-1.5-pro-32k',
     apiUrl: 'https://ark.cn-beijing.volces.com'
   }
 };

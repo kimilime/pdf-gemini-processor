@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { FileText, Settings } from 'lucide-react';
+import { FileText, Settings, Brain } from 'lucide-react';
 import { FileUploader } from './components/FileUploader';
 import { PromptEditor } from './components/PromptEditor';
 import { ResultsTable } from './components/ResultsTable';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { ModelConfigModal } from './components/ModelConfigModal';
 import { ProcessingStatus } from './components/ProcessingStatus';
 import { StyleDemo } from './components/StyleDemo';
-import { processWithGemini } from './services/geminiService';
+import { processWithAI, processWithGemini, DEFAULT_CONFIGS } from './services/aiService';
+import type { ModelConfig } from './services/aiService';
 import './App.css';
 
 interface TableData {
@@ -25,6 +27,13 @@ interface ProcessingState {
 function App() {
   const [apiKey, setApiKey] = useState<string>('');
   const [showApiModal, setShowApiModal] = useState(false);
+  const [modelConfig, setModelConfig] = useState<ModelConfig>({
+    provider: 'gemini',
+    apiKey: '',
+    model: 'gemini-2.0-flash-exp',
+    apiUrl: 'https://generativelanguage.googleapis.com'
+  });
+  const [showModelModal, setShowModelModal] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [prompt, setPrompt] = useState<string>(`请从港股企业年报PDF文件中提取董事薪酬相关信息，并按以下规范返回结构化JSON数据：
 
@@ -130,11 +139,25 @@ function App() {
   const [results, setResults] = useState<TableData[]>([]);
   const [error, setError] = useState<string>('');
 
-  // 从localStorage加载API密钥
+  // 从localStorage加载配置
   useEffect(() => {
-    const savedApiKey = localStorage.getItem('gemini-api-key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
+    // 优先加载新的模型配置
+    const savedModelConfig = localStorage.getItem('ai-model-config');
+    if (savedModelConfig) {
+      try {
+        const config = JSON.parse(savedModelConfig);
+        setModelConfig(config);
+        setApiKey(config.apiKey);
+      } catch (error) {
+        console.error('解析模型配置失败:', error);
+      }
+    } else {
+      // 兼容旧版本，加载Gemini API密钥
+      const savedApiKey = localStorage.getItem('gemini-api-key');
+      if (savedApiKey) {
+        setApiKey(savedApiKey);
+        setModelConfig(prev => ({ ...prev, apiKey: savedApiKey }));
+      }
     }
   }, []);
 
@@ -172,8 +195,8 @@ function App() {
     }));
 
     try {
-      console.log('调用 processWithGemini 处理文件:', file.name);
-      const result = await processWithGemini(file, prompt, apiKey);
+      console.log('调用 AI 服务处理文件:', file.name, '使用模型:', modelConfig.provider);
+      const result = await processWithAI(file, prompt, modelConfig);
       console.log('文件处理成功，结果条数:', result.length);
       
       // 添加文件来源信息到每条记录
@@ -225,8 +248,12 @@ function App() {
       return;
     }
 
-    if (!apiKey) {
-      setShowApiModal(true);
+    if (!modelConfig.apiKey.trim()) {
+      if (modelConfig.provider === 'gemini') {
+        setShowApiModal(true);
+      } else {
+        setShowModelModal(true);
+      }
       return;
     }
 
@@ -298,6 +325,24 @@ function App() {
     setError('');
   };
 
+  // 处理模型配置保存
+  const handleModelConfigSave = (config: ModelConfig) => {
+    setModelConfig(config);
+    setApiKey(config.apiKey);
+    localStorage.setItem('ai-model-config', JSON.stringify(config));
+  };
+
+  // 处理API密钥保存 (兼容旧版本)
+  const handleApiKeySave = (key: string) => {
+    setApiKey(key);
+    setModelConfig(prev => ({ ...prev, apiKey: key }));
+    localStorage.setItem('gemini-api-key', key);
+    
+    // 如果是新配置系统，也保存到新的存储键
+    const newConfig = { ...modelConfig, apiKey: key };
+    localStorage.setItem('ai-model-config', JSON.stringify(newConfig));
+  };
+
   const handleExportResults = () => {
     if (results.length === 0) return;
 
@@ -359,13 +404,33 @@ function App() {
               年报提取分析工具
             </h1>
           </div>
-          <button
-            onClick={() => setShowApiModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-          >
-            <Settings className="h-4 w-4" />
-            <span>API设置</span>
-          </button>
+          <div className="flex items-center space-x-4">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowModelModal(true)}
+                className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg transition-colors"
+                title="AI 模型配置"
+              >
+                <Brain className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {modelConfig.provider === 'gemini' ? 'Gemini' : 
+                   modelConfig.provider === 'openai' ? 'GPT' :
+                   modelConfig.provider === 'claude' ? 'Claude' :
+                   modelConfig.provider === 'qwen' ? '通义千问' :
+                   modelConfig.provider === 'deepseek' ? 'DeepSeek' :
+                   modelConfig.provider === 'doubao' ? '豆包' : '模型'}
+                </span>
+              </button>
+              <button
+                onClick={() => setShowApiModal(true)}
+                className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                title="API 设置"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">设置</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* 应用介绍 */}
@@ -408,7 +473,7 @@ function App() {
             onStart={handleBatchProcess}
             onPause={handlePauseProcess}
             onReset={handleResetProcess}
-            canStart={uploadedFiles.length > 0 && !!apiKey && !!prompt.trim()}
+            canStart={uploadedFiles.length > 0 && !!modelConfig.apiKey.trim() && !!prompt.trim()}
             errorMessages={processingState.errorMessages}
             error={error}
           />
@@ -437,7 +502,15 @@ function App() {
           isOpen={showApiModal}
           onClose={() => setShowApiModal(false)}
           apiKey={apiKey}
-          onSave={setApiKey}
+          onSave={handleApiKeySave}
+        />
+
+        {/* Model Config Modal */}
+        <ModelConfigModal
+          isOpen={showModelModal}
+          onClose={() => setShowModelModal(false)}
+          currentConfig={modelConfig}
+          onSave={handleModelConfigSave}
         />
       </div>
     </div>

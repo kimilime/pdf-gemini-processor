@@ -264,7 +264,7 @@ function App() {
           <div className="flex items-center space-x-3">
             <FileText className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              年报提取分析工具
+              年报及公告批量提取分析工具
             </h1>
           </div>
           <button

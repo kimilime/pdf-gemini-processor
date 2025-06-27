@@ -10,7 +10,7 @@ export const StyleDemo = () => {
           功能介绍
         </h3>
       </div>
-      <div className="space-y-2 text-sm text-green-700 dark:text-green-300 ml-8">
+      <div className="space-y-2 text-sm text-green-700 dark:text-green-300">
         <p>🎯 <strong>功能：</strong>使用Google Gemini 2.5 Pro API，根据自定义指令智能批量提取年报及公告数据，自动解析PDF并生成结构化表格</p>
         <p>👨‍💻 <strong>开发：</strong>By Terence Wang</p>
         <p>🛠️ <strong>技术：</strong>基于 React + TypeScript + Gemini 2.5 Pro API + Tailwind CSS</p>

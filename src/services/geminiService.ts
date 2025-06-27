@@ -243,10 +243,10 @@ export const processWithGemini = async (
   apiKey: string
 ): Promise<TableData[]> => {
   try {
-    // 初始化Gemini API - 使用正确的2.5 Pro模型
+    // 初始化Gemini API - 使用最新的2.5 Pro正式版本
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-pro-preview-06-05',  // 使用正确的2.5 Pro模型名称
+      model: 'gemini-2.5-pro',  // 使用最新的2.5 Pro正式版本
       generationConfig: {
         temperature: 0.0,  // 尝试更低的温度获得更一致的结果
         topP: 1.0,        // 尝试网页版可能使用的参数
@@ -272,7 +272,7 @@ export const processWithGemini = async (
     // 直接使用用户的prompt，不添加额外的包装
     const fullPrompt = prompt;
 
-    console.log('发送请求到Gemini API，使用模型:', 'gemini-2.5-pro-preview-06-05');
+    console.log('发送请求到Gemini API，使用模型:', 'gemini-2.5-pro');
     console.log('Prompt长度:', fullPrompt.length);
     console.log('API Key前10位:', apiKey.substring(0, 10) + '...');
     console.log('生成配置:', {

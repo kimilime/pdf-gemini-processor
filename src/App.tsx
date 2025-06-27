@@ -376,17 +376,6 @@ function App() {
                 </svg>
                 <span>GitHub 仓库</span>
               </a>
-              <a
-                href="https://pdf-gemini-processor-psi.vercel.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
-                <span>在线演示</span>
-              </a>
             </div>
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500">
               <span>基于 Google Gemini AI 构建</span>
@@ -395,7 +384,7 @@ function App() {
             </div>
           </div>
           <div className="mt-4 text-center text-xs text-gray-400 dark:text-gray-600">
-            <p>© 2025 PDF智能处理器. 仅供学习研究使用，请遵守相关法律法规和API使用条款。</p>
+            <p>© 2025 年报及公告批量提取分析工具. 仅供学习研究使用，请遵守相关法律法规和API使用条款。</p>
           </div>
         </footer>
       </div>

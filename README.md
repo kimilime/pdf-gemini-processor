@@ -1,6 +1,6 @@
-# PDF智能处理器
+# 年报及公告批量提取分析工具
 
-一个基于React和Gemini AI的PDF文档智能处理工具，专门用于提取年报中的高管薪酬、股权激励等结构化数据。支持批量处理多个PDF文件，并提供智能数据解析和表格展示功能。
+一个基于React和Gemini AI的年报及公告文档智能处理工具，专门用于提取年报中的高管薪酬、股权激励等结构化数据。支持批量处理多个PDF文件，并提供智能数据解析和表格展示功能。
 
 ## 🌟 功能特点
 
@@ -32,26 +32,13 @@
 
 ## 🚀 快速开始
 
-### 1. 项目设置
-```bash
-# 克隆项目
-git clone https://github.com/your-username/pdf-gemini-processor.git
-cd pdf-gemini-processor
-
-# 安装依赖
-npm install
-
-# 启动开发服务器
-npm run dev
-```
-
-### 2. 获取Gemini API密钥
+### 获取Gemini API密钥
 1. 访问 [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. 登录Google账户
 3. 创建新的API密钥
 4. 复制API密钥备用
 
-### 3. 开始使用
+### 开始使用
 1. **配置API密钥**：点击右上角"API设置"按钮，输入您的Gemini API密钥
 2. **上传PDF文件**：拖拽或点击上传一个或多个PDF文件
 3. **选择提示词**：从预设模板中选择合适的提示词，或自定义处理指令
@@ -113,33 +100,7 @@ src/
 │   └── presetPrompts.ts     # 预设提示词模板
 ├── App.tsx               # 主应用组件
 └── main.tsx             # 应用入口点
-
-stock_downloader/         # 股票年报下载工具
-├── downloader.py          # 完整版下载器
-├── simple.py             # 简化版下载器
-└── README.md            # 工具使用说明
 ```
-
-## 📈 股票年报下载工具
-
-项目还包含一个独立的Python工具，用于自动下载A股和港股年报：
-
-### 快速使用
-```bash
-cd stock_downloader
-
-# 下载单个股票年报
-python simple.py 000001 2022
-
-# 批量下载
-python downloader.py -f codes.txt -y 2022
-```
-
-### 支持的市场
-- **A股市场**: 上交所、深交所全部股票
-- **港股市场**: 香港交易所主板和创业板
-
-详细使用说明请参考 [股票下载器说明文档](./stock_downloader/README.md)。
 
 ## 🔧 高级配置
 
@@ -157,15 +118,6 @@ python downloader.py -f codes.txt -y 2022
 
 ## 📊 部署指南
 
-### 本地部署
-```bash
-# 构建生产版本
-npm run build
-
-# 预览构建结果
-npm run preview
-```
-
 ### Vercel部署
 1. Fork项目到GitHub
 2. 在Vercel中导入项目
@@ -173,7 +125,7 @@ npm run preview
 4. 无需配置环境变量（API密钥在客户端设置）
 
 ### 自定义部署
-项目包含完整的部署配置文件，支持各种部署平台。详细说明请参考 [部署指南](./DEPLOYMENT_GUIDE.md)。
+项目包含完整的部署配置文件，支持各种部署平台。
 
 ## ❓ 常见问题
 
@@ -197,16 +149,9 @@ A: 系统会保留已处理的结果，可以重新上传未完成的文件继�
 **Q: 内存占用过高？**  
 A: 避免同时处理过多大文件，建议分批处理。
 
-## 🤝 贡献指南
 
-欢迎贡献代码、报告问题或提出改进建议：
 
-1. **问题反馈**: 通过GitHub Issues报告bug或提出功能需求
-2. **代码贡献**: Fork项目，创建特性分支，提交Pull Request
-3. **文档改进**: 帮助完善文档和使用说明
-4. **测试反馈**: 测试不同类型的PDF文件，反馈处理效果
 
-详细贡献指南请参考 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
 ## 📄 许可证
 
@@ -214,9 +159,8 @@ A: 避免同时处理过多大文件，建议分批处理。
 
 ## 📞 联系方式
 
-- **项目地址**: https://github.com/your-username/pdf-gemini-processor
+- **项目地址**: https://github.com/kimilime/pdf-gemini-processor
 - **问题反馈**: GitHub Issues
-- **功能建议**: GitHub Discussions
 
 ---
 
